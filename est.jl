@@ -20,13 +20,15 @@ function Grad_L(theta, dx, dy)#各エージェントのカーネル計算から�
     grad_K3 = Matrix(1.0I, 100, 100)
     for i in 1:10
         x_diff = dx[i,:] * ones(1, 100) - (dx[i,:] * ones(1, 100))'#dxの差（100×100の対象行列）
-        K = theta[i,1]  .* exp.((-(x_diff) .^ 2) ./ theta[i,1]) + Matrix(theta[i,3]I, 100, 100)
+        K = theta[i,1]  .* exp.((-(x_diff) .^ 2) ./ theta[i,2]) + Matrix(theta[i,3]I, 100, 100)
+        A = -(x_diff) .^ 2 ./ theta[i,2]
         K_Inv = inv(K)
-        grad_K1 = exp.((-((x_diff) .^ 2)) ./ theta[i,2])
-        grad_K2 = theta[i,1] .* exp.((-((x_diff) .^ 2)) ./ theta[i,2]) .* ((x_diff) ./ theta[i,2]) .^ 2
-        grad_L[i,1] = tr(K_Inv * grad_K1) - (K_Inv * dy[i,:])' * grad_K1 * (K_Inv * dy[i,:])
-        grad_L[i,2] = tr(K_Inv * grad_K2) - (K_Inv * dy[i,:])' * grad_K2 * (K_Inv * dy[i,:])
-        grad_L[i,3] = tr(K_Inv * grad_K3) - (K_Inv * dy[i,:])' * grad_K3 * (K_Inv * dy[i,:])
+        grad_K1 = exp.(A)
+        grad_K2 = theta[i,1] .* grad_K1 .* ((x_diff) ./ theta[i,2]) .^ 2
+        M = K_Inv * dy[i,:]
+        grad_L[i,1] = tr(K_Inv * grad_K1) - M' * grad_K1 * M
+        grad_L[i,2] = tr(K_Inv * grad_K2) - M' * grad_K2 * M
+        grad_L[i,3] = tr(K_Inv * grad_K3) - M' * grad_K3 * M
     end
     return grad_L
 end
@@ -54,7 +56,7 @@ function Step3(z, grad_L, pi_til, dx, dy, z_R, y_R,w, N=10)
     theta, new_grad_L, y, pi_til
 end
 function ite(Agents)
-    iteration::Int64 = 1
+    iteration::Int64 = 10
     send_number::Int64 = 0
     weight = [
         0.4 0.2 0.2 0.2 0 0 0 0 0 0
